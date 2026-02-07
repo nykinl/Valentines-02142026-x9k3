@@ -279,7 +279,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 50); // Typing speed
         } else {
             isTyping = false;
-            nextIndicator.style.display = 'block';
+            if (!isTriviaActive) {
+                nextIndicator.style.display = 'block';
+            }
 
             // Auto advance for the shake action if text is empty
             if (dialogues[dialogueIndex].action === 'shake' && text === '') {
@@ -505,8 +507,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Start dialogue interaction
-    document.querySelector('.dialogue-box').addEventListener('click', () => {
-        if (isTriviaActive) return;
+    document.querySelector('.dialogue-box').addEventListener('click', (e) => {
+        if (isTriviaActive) {
+            e.stopPropagation();
+            return;
+        }
         if (!isTyping && dialogueIndex < dialogues.length - 1) {
             advanceDialogue();
         }
