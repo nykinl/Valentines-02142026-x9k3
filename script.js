@@ -22,123 +22,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Scene 2: Frames (Cracking Effect) ---
-    const crackContainer = document.getElementById('cracks-svg');
+    // --- Scene 2: Frames (Direct Transition) ---
     const sceneFrames = document.getElementById('scene-frames');
     const clickMeBtn = document.getElementById('click-me-btn');
-    let crackStage = 0;
-    const maxStages = 8;
 
     clickMeBtn.addEventListener('click', () => {
-        clickMeBtn.style.display = 'none';
-        sceneFrames.addEventListener('click', advanceCrackStage);
-        // Initial crack
-        advanceCrackStage();
+        // Direct transition to dialogue, skipping cracking and video
+        transitionToScene('dialogue');
     });
 
-    function advanceCrackStage() {
-        crackStage++;
-        playCrackSound();
-
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2;
-        const maxDist = Math.max(cx, cy) * 1.5; // Ensure coverage
-
-        const fragment = document.createDocumentFragment();
-
-        // Always radiate from center now
-        const count = 3 + Math.floor(Math.random() * 3);
-
-        for (let i = 0; i < count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            // Lines always start near center
-            const x1 = cx + (Math.random() - 0.5) * 50;
-            const y1 = cy + (Math.random() - 0.5) * 50;
-
-            // Go outwards
-            const length = (Math.random() * 0.6 + 0.4) * maxDist;
-            const x2 = cx + Math.cos(angle) * length;
-            const y2 = cy + Math.sin(angle) * length;
-
-            createLine(fragment, x1, y1, x2, y2, 2 + Math.random() * 2);
-        }
-
-        // Add some connecting webs if stage is advanced
-        if (crackStage > 3) {
-            const webCount = 3 + Math.floor(Math.random() * 3);
-            for (let i = 0; i < webCount; i++) {
-                // Connect arbitrary points between radial lines could be complex calculation
-                // Simpler: random jagged lines slightly further out
-                const angle = Math.random() * Math.PI * 2;
-                const dist = (Math.random() * 0.5 + 0.2) * maxDist;
-                const x1 = cx + Math.cos(angle) * dist;
-                const y1 = cy + Math.sin(angle) * dist;
-
-                const x2 = x1 + (Math.random() - 0.5) * 150;
-                const y2 = y1 + (Math.random() - 0.5) * 150;
-
-                createLine(fragment, x1, y1, x2, y2, 1 + Math.random());
-            }
-        }
-
-        crackContainer.appendChild(fragment);
-
-        if (crackStage >= maxStages) {
-            sceneFrames.removeEventListener('click', advanceCrackStage);
-            finishCracking();
-        }
-    }
-
-    function createLine(parent, x1, y1, x2, y2, width) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', x1);
-        line.setAttribute('y1', y1);
-        line.setAttribute('x2', x2);
-        line.setAttribute('y2', y2);
-        line.setAttribute('stroke-width', width);
-        line.setAttribute('class', 'crack-line');
-        parent.appendChild(line);
-    }
-
-    function playCrackSound() {
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-
-        // Synthesize a sharp snap/crunch
-        // High pass filtered noise with very short envelope
-        const bufferSize = audioCtx.sampleRate * 0.1; // 100ms
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 8); // Sharp decay
-        }
-
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
-
-        const gainNode = audioCtx.createGain();
-        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.value = 1000; // Remove low rumble, keep the snap
-
-        noise.connect(filter);
-        filter.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        noise.start();
-    }
-
-    function finishCracking() {
-        // Shatter effect simulation
-        document.body.classList.add('shake-screen');
-        setTimeout(() => {
-            document.body.classList.remove('shake-screen');
-            transitionToScene('dialogue');
-        }, 500);
-    }
+    // Cracking effect logic removed as requested
 
     // --- Scene 3: Video ---
     const videoElement = document.getElementById('transition-video');
@@ -647,8 +540,10 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Play initial big pop
-        playFireworkSound();
+        // Play fireworks mp3
+        const fireworksAudio = new Audio('assets/fireworks.mp3');
+        fireworksAudio.volume = 0.5;
+        fireworksAudio.play().catch(e => console.log("Audio play failed", e));
 
         const pieces = [];
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4'];
@@ -685,48 +580,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Random intermittent pops
+            // Random intermittent pops - Visual only for loop
             loopCount++;
-            if (loopCount % 60 === 0 && Math.random() > 0.5) {
-                playFireworkSound();
-            }
+            // if (loopCount % 60 === 0 && Math.random() > 0.5) {
+            //     
+            // }
 
             requestAnimationFrame(draw);
         }
         draw();
     }
 
-    function playFireworkSound() {
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-
-        // Simple noise burst for explosion/pop
-        const bufferSize = audioCtx.sampleRate * 0.5; // 0.5 seconds
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-
-        for (let i = 0; i < bufferSize; i++) {
-            // White noise with exponential decay
-            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 4);
-        }
-
-        const noise = audioCtx.createBufferSource();
-        noise.buffer = buffer;
-
-        const gainNode = audioCtx.createGain();
-        // Randomize volume slightly
-        gainNode.gain.setValueAtTime(0.1 + Math.random() * 0.1, audioCtx.currentTime);
-
-        // Lowpass filter to dampen the harsh white noise
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 800;
-
-        noise.connect(filter);
-        filter.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        noise.start();
-    }
+    // playFireworkSound removed
 });
