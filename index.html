@@ -1,6 +1,76 @@
 <!DOCTYPE html>
-<html>
-  <body>
-    <h1>It works 💖</h1>
-  </body>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>For Sydney</title>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Press+Start+2P&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- Scene 1: Password -->
+  <div id="scene-password" class="scene active">
+    <div class="password-container">
+      <p class="hint">Hint: Sydney is really _______</p>
+      <input type="text" id="password-input" placeholder="Type here..." autocomplete="off">
+    </div>
+  </div>
+
+  <!-- Scene 2: Frames Sequence -->
+  <div id="scene-frames" class="scene hidden">
+    <div id="frame-bg"></div>
+    <button id="click-me-btn">Click Me</button>
+  </div>
+
+  <!-- Scene 3: Video -->
+  <div id="scene-video" class="scene hidden">
+    <video id="transition-video" playsinline>
+      <!-- Source will be set via JS to preload/play -->
+      <source src="assets/video1.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Scene 4: Undertale Dialogue -->
+  <div id="scene-dialogue" class="scene hidden">
+    <!-- Background frame8 is set in CSS/JS -->
+    <div class="undertale-ui">
+      <div class="sprite-container">
+        <!-- Heart or Face will appear here -->
+        <div id="character-sprite" class="heart-sprite"></div>
+      </div>
+      <div class="dialogue-box">
+        <p id="dialogue-text"></p>
+        <div class="next-indicator"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 5: Proposal -->
+  <div id="scene-proposal" class="scene hidden">
+    <div class="flowers-container" id="flowers-container"></div>
+    <div class="proposal-content">
+      <div class="face-container">
+        <img src="assets/face.jpeg" alt="Nykin" class="nykin-face">
+      </div>
+      <h1>Will you be Nykins valentines?</h1>
+      <div class="buttons">
+        <button id="yes-btn">Yes</button>
+        <button id="no-btn">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene 6: Celebration -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <script src="script.js"></script>
+</body>
+
 </html>
