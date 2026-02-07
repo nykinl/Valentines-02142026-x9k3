@@ -138,34 +138,19 @@ html {
 }
 
 .heart-sprite {
-    width: 50px;
-    height: 50px;
-    background-color: red;
-    transform: rotate(45deg);
+    width: 100px;
+    /* adjusted to fit SVG */
+    height: 100px;
+    background-color: transparent;
+    /* Changed from red */
+    /* transform: rotate(45deg); Removed rotation as SVG handles it */
     position: relative;
-    box-shadow: 0 0 10px red;
+    /* box-shadow: 0 0 10px red; Removed, SVG has stroke/shadow */
     animation: float 2s infinite ease-in-out;
 }
 
-.heart-sprite::before,
-.heart-sprite::after {
-    content: "";
-    width: 50px;
-    height: 50px;
-    background-color: red;
-    border-radius: 50%;
-    position: absolute;
-}
-
-.heart-sprite::before {
-    top: -25px;
-    left: 0;
-}
-
-.heart-sprite::after {
-    top: 0;
-    left: -25px;
-}
+/* Removed old pseudo-elements for CSS heart */
+/* .heart-sprite::before, .heart-sprite::after ... */
 
 .dialogue-box {
     width: 100%;
@@ -356,4 +341,29 @@ button {
 
 .drop-animation {
     animation: dropIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.shake-screen {
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+.crack-line {
+    stroke: white;
+    stroke-width: 2;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
+    animation: crackAppear 0.1s linear;
+}
+
+@keyframes crackAppear {
+    from {
+        stroke-dasharray: 0 1000;
+    }
+
+    to {
+        stroke-dasharray: 1000 0;
+    }
 }

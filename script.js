@@ -21,42 +21,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Scene 2: Frames ---
-    let frameIndex = 1;
-    const totalFrames = 8; // Actually we handle logic to play video after frame 7
-    const frameBg = document.getElementById('frame-bg');
+    // --- Scene 2: Frames (Cracking Effect) ---
+    const crackContainer = document.getElementById('cracks-svg');
+    const sceneFrames = document.getElementById('scene-frames');
     const clickMeBtn = document.getElementById('click-me-btn');
-
-    // Init first frame
-    frameBg.style.backgroundImage = `url('assets/frame1.png')`;
+    let crackCount = 0;
+    const maxCracks = 10;
 
     clickMeBtn.addEventListener('click', () => {
         clickMeBtn.style.display = 'none';
-        frameIndex++;
-        updateFrame();
+        // Enable clicking anywhere on the scene
+        sceneFrames.addEventListener('click', createCrack);
+        // Initial crack center
+        createCrack({ clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
     });
 
-    function updateFrame() {
-        if (frameIndex < 8) {
-            frameBg.style.backgroundImage = `url('assets/frame${frameIndex}.png')`;
+    function createCrack(e) {
+        crackCount++;
+
+        // Audio placeholder for crack sound if desired (optional)
+        // playCrackSound();
+
+        const x = e.clientX;
+        const y = e.clientY;
+
+        // Generate random crack pattern
+        const numLines = Math.floor(Math.random() * 3) + 3; // 3-5 lines per click
+
+        for (let i = 0; i < numLines; i++) {
+            const angle = Math.random() * 360;
+            const length = Math.random() * 100 + 50;
+            const x2 = x + Math.cos(angle * Math.PI / 180) * length;
+            const y2 = y + Math.sin(angle * Math.PI / 180) * length;
+
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('y1', y);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            line.setAttribute('class', 'crack-line');
+            crackContainer.appendChild(line);
         }
 
-        // Setup click listener for the full screen after button click
-        if (frameIndex === 2) {
-            scenes.frames.addEventListener('click', handleFrameClick);
+        if (crackCount >= maxCracks) {
+            sceneFrames.removeEventListener('click', createCrack);
+            finishCracking();
         }
     }
 
-    function handleFrameClick() {
-        // Prevent rapid clicks if needed, but for now simple increment
-        frameIndex++;
-        if (frameIndex < 8) {
-            frameBg.style.backgroundImage = `url('assets/frame${frameIndex}.png')`;
-        } else if (frameIndex === 8) {
-            // Trigger video scene
-            scenes.frames.removeEventListener('click', handleFrameClick);
-            transitionToScene('video');
-        }
+    function finishCracking() {
+        // Shatter effect simulation
+        document.body.classList.add('shake-screen');
+        setTimeout(() => {
+            document.body.classList.remove('shake-screen');
+            // Transition directly to dialogue (skipping video as per plan/feedback implication)
+            // Or if video was specifically for the shatter, we can keep it? 
+            // User said "blurry images for frames... cracking effect doesn't work".
+            // Let's assume the "video" was the shatter transition. 
+            // We'll proceed to 'dialogue' directly for a clean break, or use 'video' if it's a specific asset they want.
+            // Plan said "Remove/bypass video transition... transition to next scene".
+            transitionToScene('dialogue');
+        }, 500);
     }
 
     // --- Scene 3: Video ---
@@ -96,10 +121,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const dialogues = [
-        { text: "hi you must be sydney! Ive heard many things about you.", type: "heart" },
-        { text: "oh wheres nykin... hes... well, I hate to break it too you but there is no valentines. Im sorry", type: "heart" },
-        { text: "i mean you can still go outside, play with friends, but I promise you theres nothing here for you", type: "heart" },
-        { text: "...", type: "heart", action: "shake" },
+        { text: "Hi sydeny", type: "heart" },
+        { text: "Ive heard many things about you.", type: "heart" },
+        { text: "oh wheres nykin...", type: "heart" },
+        { text: "hes... well,", type: "heart" },
+        { text: "I hate to break it too you but", type: "heart" },
+        { text: "there is no valentines.", type: "heart" },
+        { text: "Im sorry", type: "heart" },
+        { text: "i mean you can still go outside,", type: "heart" },
+        { text: "play with friends,", type: "heart" },
+        { text: "but I promise you theres nothing here for you", type: "heart" },
+        { text: "...", type: "heart" },
+        // Logic will handle shake here via a special empty entry or just action on previous? 
+        // User asked for "..." then shake then "what was that?"
+        { text: "", type: "heart", action: "shake" }, // Invisible Shake step
+        { text: "what was that?", type: "heart" },
         { text: "you thought I would leave?! never!", type: "face" },
         { text: "so then sydeny, will you be my valentnes?", type: "face" },
         { text: "I brought you flowers too", type: "face", action: "end" }
@@ -116,17 +152,22 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             isTyping = false;
             nextIndicator.style.display = 'block';
+
+            // Auto advance for the shake action if text is empty
+            if (dialogues[dialogueIndex].action === 'shake' && text === '') {
+                performAction('shake');
+            }
         }
     }
 
     function performAction(action) {
         if (action === 'shake') {
             document.body.classList.add('shake-screen');
+            // Play sound if available?
             setTimeout(() => {
                 document.body.classList.remove('shake-screen');
-                // Auto advance after shake if desired, or wait for click. 
-                // User script implies "..." then face drops.
-            }, 2000);
+                advanceDialogue(); // Auto advance after shake
+            }, 1000);
         } else if (action === 'end') {
             setTimeout(() => {
                 transitionToScene('proposal');
@@ -150,9 +191,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Handle Sprite Changes
         if (line.type === 'heart') {
             characterSprite.className = 'heart-sprite';
-            characterSprite.innerHTML = '';
-            characterSprite.style.background = 'red';
-            characterSprite.style.boxShadow = '0 0 10px red';
+            // Reset styles that might have been set by CSS class or previous runs
+            characterSprite.style.background = 'transparent';
+            characterSprite.style.boxShadow = 'none';
+            characterSprite.style.transform = 'none';
+            characterSprite.style.animation = 'float 2s infinite ease-in-out';
+
+            // SVG Heart with Border and Face
+            characterSprite.innerHTML = `
+            <svg width="100" height="100" viewBox="0 0 100 100" style="overflow:visible;">
+                <!-- Heart Shape with Border -->
+                <path d="M50 88 C 10 60 -15 35 15 15 C 30 0 45 10 50 25 C 55 10 70 0 85 15 C 115 35 90 60 50 88 Z" 
+                      fill="red" stroke="white" stroke-width="3" />
+                
+                <!-- Face -->
+                <!-- Eyes -->
+                <circle cx="35" cy="40" r="4" fill="black" />
+                <circle cx="65" cy="40" r="4" fill="black" />
+                
+                <!-- Mouth (Smile) -->
+                <path d="M35 55 Q 50 65 65 55" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            `;
+
         } else if (line.type === 'face') {
             characterSprite.className = 'face-sprite';
             characterSprite.style.background = 'transparent';
@@ -164,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Handle Special Actions immediately or after text?
-        if (line.action) {
+        if (line.action && line.text !== '') {
             performAction(line.action);
         }
 
@@ -253,6 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
+        // Play initial big pop
+        playFireworkSound();
+
         const pieces = [];
         const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4'];
 
@@ -268,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        let loopCount = 0;
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             pieces.forEach(p => {
@@ -286,8 +351,49 @@ document.addEventListener('DOMContentLoaded', () => {
                     p.x = Math.random() * canvas.width;
                 }
             });
+
+            // Random intermittent pops
+            loopCount++;
+            if (loopCount % 60 === 0 && Math.random() > 0.5) {
+                playFireworkSound();
+            }
+
             requestAnimationFrame(draw);
         }
         draw();
+    }
+
+    function playFireworkSound() {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        // Simple noise burst for explosion/pop
+        const bufferSize = audioCtx.sampleRate * 0.5; // 0.5 seconds
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            // White noise with exponential decay
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 4);
+        }
+
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+
+        const gainNode = audioCtx.createGain();
+        // Randomize volume slightly
+        gainNode.gain.setValueAtTime(0.1 + Math.random() * 0.1, audioCtx.currentTime);
+
+        // Lowpass filter to dampen the harsh white noise
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 800;
+
+        noise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        noise.start();
     }
 });
