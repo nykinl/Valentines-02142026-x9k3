@@ -174,8 +174,98 @@ html {
     bottom: 15px;
     right: 15px;
     animation: blink 1s infinite;
-    display: none;
     /* Shown when text is done */
+}
+
+/* Trivia UI */
+#trivia-container {
+    margin-top: 20px;
+    border-top: 2px dashed white;
+    padding-top: 10px;
+    display: flex;
+    /* hidden class toggles this */
+    flex-direction: column;
+    gap: 10px;
+}
+
+#trivia-container.hidden {
+    display: none;
+}
+
+#trivia-question {
+    color: #ffff00;
+    /* Yellow for questions */
+    margin: 0;
+}
+
+#trivia-input-area,
+#trivia-choices {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+#trivia-input-area.hidden,
+#trivia-choices.hidden {
+    display: none;
+}
+
+#trivia-answer {
+    background: black;
+    border: 2px solid white;
+    color: white;
+    font-family: var(--font-pixel);
+    padding: 5px;
+    font-size: 0.8rem;
+    outline: none;
+}
+
+#trivia-submit,
+#choice-yes,
+#choice-no {
+    background: black;
+    border: 2px solid white;
+    color: white;
+    font-family: var(--font-pixel);
+    cursor: pointer;
+    padding: 5px 15px;
+    font-size: 0.8rem;
+}
+
+#trivia-submit:hover,
+#choice-yes:hover,
+#choice-no:hover {
+    background: white;
+    color: black;
+}
+
+#trivia-feedback {
+    color: #ff4d6d;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* Game Over Overlay */
+#game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    z-index: 999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 2s;
+    pointer-events: none;
+}
+
+#game-over-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 /* Scene 5: Proposal */
@@ -366,4 +456,98 @@ button {
     to {
         stroke-dasharray: 1000 0;
     }
+}
+
+/* Trapped Face Visuals */
+.trapped-container {
+    position: relative;
+    display: inline-block;
+}
+
+.trapped-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(90deg,
+            transparent,
+            transparent 10px,
+            rgba(50, 50, 50, 0.8) 10px,
+            rgba(50, 50, 50, 0.8) 15px);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+    z-index: 5;
+}
+
+/* Trivia UI */
+#trivia-container {
+    width: 100%;
+    margin-top: 20px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    z-index: 20;
+}
+
+#trivia-input {
+    width: 80%;
+    padding: 10px;
+    font-family: var(--font-pixel);
+    font-size: 1rem;
+    border: 2px solid white;
+    background: black;
+    color: white;
+    text-align: center;
+}
+
+#trivia-submit {
+    padding: 10px 20px;
+    font-family: var(--font-pixel);
+    background: white;
+    color: black;
+    border: none;
+    cursor: pointer;
+}
+
+.trivia-choices {
+    display: flex;
+    gap: 20px;
+}
+
+.trivia-choice-btn {
+    padding: 10px 20px;
+    font-family: var(--font-pixel);
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+    cursor: pointer;
+}
+
+.trivia-choice-btn:hover {
+    background: white;
+    color: black;
+}
+
+/* Game Over Overlay */
+#game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 2s ease;
+    color: white;
+    font-family: var(--font-pixel);
+    text-align: center;
 }

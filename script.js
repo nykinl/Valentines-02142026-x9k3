@@ -28,9 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let crackStage = 0;
     const maxStages = 8;
 
-    // Pre-calculate/Define the spiderweb pattern
-    // We will generate lines on the fly but based on a radial logic
-
     clickMeBtn.addEventListener('click', () => {
         clickMeBtn.style.display = 'none';
         sceneFrames.addEventListener('click', advanceCrackStage);
@@ -46,59 +43,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const cy = window.innerHeight / 2;
         const maxDist = Math.max(cx, cy) * 1.5; // Ensure coverage
 
-        // Stage Logic:
-        // 1-3: Main radial fractures
-        // 4-6: Secondary radial + Inner webbing
-        // 7-8: Dense webbing (shattered glass look)
-
         const fragment = document.createDocumentFragment();
 
-        if (crackStage <= 3) {
-            // Add 3-4 major radial lines per click
-            const count = 3 + Math.floor(Math.random() * 2);
-            for (let i = 0; i < count; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                // Varying lengths, some go full way
-                const length = (Math.random() * 0.5 + 0.5) * maxDist;
-                createLine(fragment, cx, cy, cx + Math.cos(angle) * length, cy + Math.sin(angle) * length, 2 + Math.random() * 2);
-            }
-        } else if (crackStage <= 6) {
-            // More radials + Cross webbing
-            const radialCount = 3;
-            for (let i = 0; i < radialCount; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                createLine(fragment, cx, cy, cx + Math.cos(angle) * maxDist, cy + Math.sin(angle) * maxDist, 1.5);
-            }
+        // Always radiate from center now
+        const count = 3 + Math.floor(Math.random() * 3);
 
-            // Webbing (connecting lines)
-            const webCount = 5;
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            // Lines always start near center
+            const x1 = cx + (Math.random() - 0.5) * 50;
+            const y1 = cy + (Math.random() - 0.5) * 50;
+
+            // Go outwards
+            const length = (Math.random() * 0.6 + 0.4) * maxDist;
+            const x2 = cx + Math.cos(angle) * length;
+            const y2 = cy + Math.sin(angle) * length;
+
+            createLine(fragment, x1, y1, x2, y2, 2 + Math.random() * 2);
+        }
+
+        // Add some connecting webs if stage is advanced
+        if (crackStage > 3) {
+            const webCount = 3 + Math.floor(Math.random() * 3);
             for (let i = 0; i < webCount; i++) {
-                const angle1 = Math.random() * Math.PI * 2;
-                const angle2 = angle1 + (Math.random() * 0.5 + 0.2); // connect to nearby angle
-                const dist = (Math.random() * 0.6 + 0.2) * maxDist; // distance from center
-
-                const x1 = cx + Math.cos(angle1) * dist;
-                const y1 = cy + Math.sin(angle1) * dist;
-                const x2 = cx + Math.cos(angle2) * dist;
-                const y2 = cy + Math.sin(angle2) * dist;
-
-                createLine(fragment, x1, y1, x2, y2, 1 + Math.random());
-            }
-        } else {
-            // Final stages: dense random webbing everywhere matching the "shattered" look
-            // Random polygon-like connections
-            for (let i = 0; i < 15; i++) {
-                // Random point
+                // Connect arbitrary points between radial lines could be complex calculation
+                // Simpler: random jagged lines slightly further out
                 const angle = Math.random() * Math.PI * 2;
-                const dist = Math.random() * maxDist;
+                const dist = (Math.random() * 0.5 + 0.2) * maxDist;
                 const x1 = cx + Math.cos(angle) * dist;
                 const y1 = cy + Math.sin(angle) * dist;
 
-                // Connect to a nearby point
-                const x2 = x1 + (Math.random() - 0.5) * 100;
-                const y2 = y1 + (Math.random() - 0.5) * 100;
+                const x2 = x1 + (Math.random() - 0.5) * 150;
+                const y2 = y1 + (Math.random() - 0.5) * 150;
 
-                createLine(fragment, x1, y1, x2, y2, 0.5 + Math.random());
+                createLine(fragment, x1, y1, x2, y2, 1 + Math.random());
             }
         }
 
@@ -178,6 +156,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const characterSprite = document.getElementById('character-sprite');
     let dialogueIndex = 0;
     let isTyping = false;
+    let faceHasAppeared = false;
+    let isFaceTrapped = false;
+
+    // Trivia State
+    const triviaContainer = document.getElementById('trivia-container');
+    const triviaInput = document.getElementById('trivia-input');
+    const triviaChoices = document.getElementById('trivia-choices');
+    const triviaSubmit = document.getElementById('trivia-submit');
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+
+    let currentTriviaIndex = 0;
+    const triviaQuestions = [
+        { q: "What is his favorite color?", a: "purple", type: "text" },
+        { q: "What is his dog's name?", a: "berty", type: "text" },
+        { q: "What is his favorite place he's traveled?", a: "egypt", type: "text" },
+        { q: "How many days have you guys been dating?", a: "238", type: "text" },
+        { q: "Does he love you more than anything in the world?", a: "yes", type: "choice", options: ["Yes", "No"] },
+        { q: "Is he so down bad for you?", a: "yes", type: "choice", options: ["Yes", "No"] }
+    ];
 
     // Creating vanilla Web Audio API context for beep
     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -201,22 +198,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const dialogues = [
         { text: "Hi sydeny", type: "heart" },
         { text: "Ive heard many things about you.", type: "heart" },
-        { text: "oh wheres nykin...", type: "heart" },
-        { text: "hes... well,", type: "heart" },
+        { text: "...", type: "heart" },
+        { text: "oh where's Nykin...", type: "heart" },
+        { text: "he's... well,", type: "heart" },
         { text: "I hate to break it too you but", type: "heart" },
         { text: "there is no valentines.", type: "heart" },
         { text: "Im sorry", type: "heart" },
         { text: "i mean you can still go outside,", type: "heart" },
         { text: "play with friends,", type: "heart" },
+        { text: "do something fun I guess,", type: "heart" },
         { text: "but I promise you theres nothing here for you", type: "heart" },
         { text: "...", type: "heart" },
-        // Logic will handle shake here via a special empty entry or just action on previous? 
-        // User asked for "..." then shake then "what was that?"
-        { text: "", type: "heart", action: "shake" }, // Invisible Shake step
-        { text: "what was that?", type: "heart" },
-        { text: "you thought I would leave?! never!", type: "face" },
-        { text: "so then sydeny, will you be my valentnes?", type: "face" },
-        { text: "I brought you flowers too", type: "face", action: "end" }
+        { text: "...", type: "heart" },
+        { text: "...", type: "heart" },
+        { text: "Why are you still here?", type: "heart" },
+        { text: "I told you", type: "heart" },
+        { text: "theres nothing here", type: "heart" },
+        { text: "you're wasting your time", type: "heart" },
+        { text: "...", type: "heart" },
+        { text: "...", type: "heart" },
+        { text: "...", type: "heart" },
+        { text: "this isn't funny", type: "heart" },
+        { text: "don't you have better things to do?", type: "heart" },
+        { text: "THERES NOTHING HERE FOR YOU!!!", type: "heart", emotion: "angry" },
+        { text: "", type: "heart", action: "shake" },
+        { text: "what was that?", type: "heart", emotion: "evil" },
+        { text: "NO IT CAN'T BE", type: "heart", emotion: "evil" },
+        { text: "ITS IMPOSSIBLE", type: "heart", emotion: "evil" },
+        { text: "SYDNEY", type: "face" },
+        { text: "Help please Im trapped", type: "face", action: "trapFace" }, // Trapped starts here
+        { text: "The heart...", type: "face", emotion: "sad" },
+        { text: "He's evil", type: "face", emotion: "angry" },
+        { text: "MUAHAHAHAHAHA", type: "heart", emotion: "evil" },
+        { text: "I took ur cute boyfriend", type: "heart", emotion: "evil" },
+        { text: "and theres nothing you can do.", type: "heart" },
+        { text: "unless...", type: "heart" },
+        { text: "unless you can prove you know him...", type: "heart" },
+        { text: "BETTER THAN MEEEE", type: "heart", emotion: "angry" },
+        { text: "oh your so screwed", type: "heart", emotion: "evil" },
+        { text: "muahahahahah", type: "heart", emotion: "evil" },
+        { text: "first question...", type: "heart" },
+        { text: "", type: "heart", action: "startTrivia" }, // Starts trivia
+        // Trivia happens here. 
+        // If Win:
+        { text: "NO IT CAN'T BE", type: "heart", emotion: "angry" },
+        { text: "I'm melting!!", type: "heart", action: "shake", emotion: "angry" },
+        { text: "...", type: "heart" },
+        { text: "Omg you saved me!", type: "face", emotion: "happy", action: "freeFace" },
+        { text: "ur kinda really attracting and sexy and hot", type: "face", emotion: "thinking" },
+        { text: "wait...", type: "face", emotion: "happy" },
+        { text: "you thought I would leave?! never!", type: "face", emotion: "angry" }, // referencing user request
+        { text: "so then sydeny, will you be my valentnes?", type: "face", emotion: "happy" },
+        { text: "I brought you flowers too", type: "face", action: "end", emotion: "sexy" }
     ];
 
     function typeWriter(text, index = 0) {
@@ -241,16 +274,101 @@ document.addEventListener('DOMContentLoaded', () => {
     function performAction(action) {
         if (action === 'shake') {
             document.body.classList.add('shake-screen');
-            // Play sound if available?
             setTimeout(() => {
                 document.body.classList.remove('shake-screen');
-                advanceDialogue(); // Auto advance after shake
+                advanceDialogue();
             }, 1000);
         } else if (action === 'end') {
             setTimeout(() => {
                 transitionToScene('proposal');
             }, 2000);
+        } else if (action === 'startTrivia') {
+            startTrivia();
         }
+        // trapFace and freeFace are handled in renderDialogue directly to avoid loops
+    }
+
+    // --- Trivia Logic ---
+    function startTrivia() {
+        dialogueText.style.display = 'none';
+        nextIndicator.style.display = 'none';
+        triviaContainer.style.display = 'flex';
+        loadTriviaQuestion();
+    }
+
+    function loadTriviaQuestion() {
+        const q = triviaQuestions[currentTriviaIndex];
+
+        // Show question in the dialogue box (using a temporary text element or reusing dialogueText?)
+        // Let's reuse dialogueText but make sure it's visible
+        dialogueText.style.display = 'block';
+        dialogueText.textContent = q.q;
+
+        triviaInput.value = '';
+        triviaInput.style.display = 'none';
+        triviaChoices.style.display = 'none';
+        triviaSubmit.style.display = 'none';
+
+        if (q.type === 'text') {
+            triviaInput.style.display = 'block';
+            triviaSubmit.style.display = 'block';
+            triviaInput.focus();
+        } else if (q.type === 'choice') {
+            triviaChoices.innerHTML = '';
+            triviaChoices.style.display = 'flex';
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.textContent = opt;
+                btn.className = 'trivia-choice-btn';
+                btn.addEventListener('click', () => checkAnswer(opt));
+                triviaChoices.appendChild(btn);
+            });
+        }
+    }
+
+    triviaSubmit.addEventListener('click', () => checkAnswer(triviaInput.value));
+    triviaInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkAnswer(triviaInput.value);
+    });
+
+    function checkAnswer(answer) {
+        const q = triviaQuestions[currentTriviaIndex];
+        const correct = q.a.toLowerCase().trim();
+        const userAns = answer.toLowerCase().trim();
+
+        if (userAns === correct) {
+            // Correct
+            currentTriviaIndex++;
+            if (currentTriviaIndex < triviaQuestions.length) {
+                loadTriviaQuestion();
+            } else {
+                winTrivia();
+            }
+        } else {
+            loseTrivia();
+        }
+    }
+
+    function loseTrivia() {
+        // Heart says wrong, fade to black
+        dialogueText.textContent = "WRONG! YOU LOSE!";
+        triviaContainer.style.display = 'none';
+
+        setTimeout(() => {
+            // Sad dialogue before black screen?
+            // User requested: "heart tells them they lose and the face has some hurt sad dialog then it fades to black"
+            // I'll just simulate it quickly here or create a mini-sequence.
+            // Simpler: Just fade to black with overlay
+            gameOverOverlay.style.display = 'flex';
+            setTimeout(() => { gameOverOverlay.style.opacity = '1'; }, 100);
+        }, 1500);
+    }
+
+    function winTrivia() {
+        triviaContainer.style.display = 'none';
+        dialogueText.style.display = 'block';
+        // Advance to next dialogue after the trivia start point
+        advanceDialogue();
     }
 
     function advanceDialogue() {
@@ -263,32 +381,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderDialogue(line) {
+        // Update state based on action BEFORE rendering if it affects rendering
+        if (line.action === 'trapFace') isFaceTrapped = true;
+        if (line.action === 'freeFace') isFaceTrapped = false;
+
         dialogueText.textContent = '';
         nextIndicator.style.display = 'none';
 
-        // Handle Sprite Changes
+        // Handle Heart Sprite
         if (line.type === 'heart') {
             characterSprite.className = 'heart-sprite';
-            // Reset styles that might have been set by CSS class or previous runs
             characterSprite.style.background = 'transparent';
             characterSprite.style.boxShadow = 'none';
             characterSprite.style.transform = 'none';
             characterSprite.style.animation = 'float 2s infinite ease-in-out';
 
-            // SVG Heart with Border and Face
+            // Heart Expressions (Normal, Evil, Angry)
+            let eyes = '<circle cx="35" cy="40" r="4" fill="black" /><circle cx="65" cy="40" r="4" fill="black" />';
+            let mouth = '<path d="M35 55 Q 50 65 65 55" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" />';
+
+            if (line.emotion === 'evil') {
+                // Angled eyebrows, sharp grin
+                eyes = `
+                    <path d="M25 35 L40 42" stroke="black" stroke-width="2" />
+                    <circle cx="35" cy="42" r="3" fill="black" />
+                    <path d="M75 35 L60 42" stroke="black" stroke-width="2" />
+                    <circle cx="65" cy="42" r="3" fill="black" />
+                `;
+                mouth = '<path d="M35 55 Q 50 70 65 55" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" />';
+            } else if (line.emotion === 'angry') {
+                // Frown, narrow eyes
+                eyes = `
+                    <path d="M30 38 L40 42" stroke="black" stroke-width="2" />
+                    <circle cx="35" cy="42" r="3" fill="black" />
+                    <path d="M70 38 L60 42" stroke="black" stroke-width="2" />
+                    <circle cx="65" cy="42" r="3" fill="black" />
+                `;
+                mouth = '<path d="M35 65 Q 50 55 65 65" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" />';
+            }
+
             characterSprite.innerHTML = `
             <svg width="100" height="100" viewBox="0 0 100 100" style="overflow:visible;">
-                <!-- Heart Shape with Border -->
                 <path d="M50 88 C 10 60 -15 35 15 15 C 30 0 45 10 50 25 C 55 10 70 0 85 15 C 115 35 90 60 50 88 Z" 
                       fill="red" stroke="white" stroke-width="3" />
-                
-                <!-- Face -->
-                <!-- Eyes -->
-                <circle cx="35" cy="40" r="4" fill="black" />
-                <circle cx="65" cy="40" r="4" fill="black" />
-                
-                <!-- Mouth (Smile) -->
-                <path d="M35 55 Q 50 65 65 55" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" />
+                ${eyes}
+                ${mouth}
             </svg>
             `;
 
@@ -298,12 +435,34 @@ document.addEventListener('DOMContentLoaded', () => {
             characterSprite.style.boxShadow = 'none';
             characterSprite.style.transform = 'none';
             characterSprite.style.animation = 'none';
-            // Insert Image with animation
-            characterSprite.innerHTML = `<img src="assets/face.jpeg" class="drop-animation" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">`;
+
+            // Determine Image Source based on emotion
+            let imgSrc = 'assets/face.jpeg';
+            if (line.emotion === 'sad') imgSrc = 'assets/sad.jpeg';
+            if (line.emotion === 'happy' || line.emotion === 'sexy') imgSrc = 'assets/smile.jpeg';
+            if (line.emotion === 'angry') imgSrc = 'assets/angry.jpeg';
+            if (line.emotion === 'thinking') imgSrc = 'assets/turned_on_or_thinking.jpeg';
+
+            // Animation Logic: Only drop-in once
+            let imgClass = '';
+            if (!faceHasAppeared) {
+                imgClass = 'drop-animation';
+                faceHasAppeared = true;
+            }
+
+            const imgHtml = `<img src="${imgSrc}" class="${imgClass}" style="width:100px; height:100px; border-radius:50%; object-fit:cover;">`;
+
+            // Trapped State Logic
+            if (isFaceTrapped) {
+                characterSprite.innerHTML = `<div class="trapped-container">${imgHtml}</div>`;
+            } else {
+                characterSprite.innerHTML = imgHtml;
+            }
         }
 
-        // Handle Special Actions immediately or after text?
-        if (line.action && line.text !== '') {
+        // Handle Special Actions immediately
+        // We handle trapFace/freeFace above to avoid recursion loop with re-render
+        if (line.action && line.action !== 'trapFace' && line.action !== 'freeFace') {
             performAction(line.action);
         }
 

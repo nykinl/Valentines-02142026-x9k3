@@ -52,6 +52,12 @@
       <div class="dialogue-box">
         <p id="dialogue-text"></p>
         <div class="next-indicator"></div>
+        <!-- Trivia UI -->
+        <div id="trivia-container">
+          <input type="text" id="trivia-input" placeholder="Answer..." autocomplete="off">
+          <div id="trivia-choices" class="trivia-choices" style="display:none;"></div>
+          <button id="trivia-submit">Submit</button>
+        </div>
       </div>
     </div>
   </div>
@@ -73,6 +79,18 @@
 
   <!-- Scene 6: Celebration -->
   <canvas id="confetti-canvas"></canvas>
+
+  <!-- Game Over Overlay -->
+  <div id="game-over-overlay">
+    <h1 style="color: red; font-family: 'Press Start 2P';">GAME OVER</h1>
+    <p>Refresh to try again...</p>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="game-over-overlay">
+    <h1>GAME OVER</h1>
+    <p>Refresh the page to try again.</p>
+  </div>
 
   <script src="script.js"></script>
 </body>
