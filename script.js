@@ -165,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const triviaChoices = document.getElementById('trivia-choices');
     const triviaSubmit = document.getElementById('trivia-submit');
     const gameOverOverlay = document.getElementById('game-over-overlay');
+    let isTriviaActive = false;
 
     let currentTriviaIndex = 0;
     const triviaQuestions = [
@@ -309,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dialogueText.style.display = 'none';
         nextIndicator.style.display = 'none';
         triviaContainer.style.display = 'flex';
+        isTriviaActive = true;
         loadTriviaQuestion();
     }
 
@@ -347,21 +349,37 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Enter') checkAnswer(triviaInput.value);
     });
 
+    let isCheckingAnswer = false;
+
     function checkAnswer(answer) {
+        if (isCheckingAnswer) return; // Prevent double submission/race conditions
+
         const q = triviaQuestions[currentTriviaIndex];
-        const correct = q.a.toLowerCase().trim();
-        const userAns = answer.toLowerCase().trim();
+
+        // For text inputs, ignore empty submissions
+        if (q.type === 'text' && (!answer || !answer.trim())) return;
+
+        isCheckingAnswer = true;
+
+        // Robust normalization: lowercase, trim, remove punctuation
+        const correct = String(q.a).toLowerCase().trim().replace(/[.,!?'"]/g, '');
+        const userAns = String(answer).toLowerCase().trim().replace(/[.,!?'"]/g, '');
 
         if (userAns === correct) {
             // Correct
             currentTriviaIndex++;
             if (currentTriviaIndex < triviaQuestions.length) {
-                loadTriviaQuestion();
+                setTimeout(() => {
+                    loadTriviaQuestion();
+                    isCheckingAnswer = false;
+                }, 500); // Small delay for better UX
             } else {
                 winTrivia();
+                isCheckingAnswer = false;
             }
         } else {
-            loseTrivia();
+            loseTrivia(); // Game over logic handles the end state
+            // Keep isCheckingAnswer true to prevent further inputs during game over
         }
     }
 
@@ -383,6 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function winTrivia() {
         triviaContainer.style.display = 'none';
         dialogueText.style.display = 'block';
+        isTriviaActive = false;
         // Advance to next dialogue after the trivia start point
         advanceDialogue();
     }
@@ -487,6 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start dialogue interaction
     document.querySelector('.dialogue-box').addEventListener('click', () => {
+        if (isTriviaActive) return;
         if (!isTyping && dialogueIndex < dialogues.length - 1) {
             advanceDialogue();
         }
