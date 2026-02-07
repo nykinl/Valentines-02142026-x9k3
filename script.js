@@ -196,6 +196,46 @@ document.addEventListener('DOMContentLoaded', () => {
         oscillator.stop(audioCtx.currentTime + 0.05);
     }
 
+    function playSuccessSound() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        // pleasant major third arpeggio
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function playFailureSound() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3); // Pitch drop
+
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
+
     const dialogues = [
         { text: "Hi sydeny", type: "heart" },
         { text: "Ive heard many things about you.", type: "heart" },
@@ -369,17 +409,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (userAns === correct) {
             // Correct
+            playSuccessSound();
+
+            // Visual feedback
+            const container = document.getElementById('trivia-container');
+            // Store original content to restore later or just rebuild
+            // Simpler: just hide inputs and show text in dialogue box
+            triviaInput.style.display = 'none';
+            triviaChoices.style.display = 'none';
+            triviaSubmit.style.display = 'none';
+
+            dialogueText.textContent = "Correct! Next question...";
+            dialogueText.style.color = '#4CAF50'; // Green for success
+
             currentTriviaIndex++;
-            if (currentTriviaIndex < triviaQuestions.length) {
-                setTimeout(() => {
+            setTimeout(() => {
+                dialogueText.style.color = ''; // Reset color
+                if (currentTriviaIndex < triviaQuestions.length) {
                     loadTriviaQuestion();
                     isCheckingAnswer = false;
-                }, 500); // Small delay for better UX
-            } else {
-                winTrivia();
-                isCheckingAnswer = false;
-            }
+                } else {
+                    winTrivia();
+                    isCheckingAnswer = false;
+                }
+            }, 1500);
         } else {
+            playFailureSound();
             loseTrivia(); // Game over logic handles the end state
             // Keep isCheckingAnswer true to prevent further inputs during game over
         }
