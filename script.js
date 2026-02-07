@@ -25,48 +25,132 @@ document.addEventListener('DOMContentLoaded', () => {
     const crackContainer = document.getElementById('cracks-svg');
     const sceneFrames = document.getElementById('scene-frames');
     const clickMeBtn = document.getElementById('click-me-btn');
-    let crackCount = 0;
-    const maxCracks = 10;
+    let crackStage = 0;
+    const maxStages = 8;
+
+    // Pre-calculate/Define the spiderweb pattern
+    // We will generate lines on the fly but based on a radial logic
 
     clickMeBtn.addEventListener('click', () => {
         clickMeBtn.style.display = 'none';
-        // Enable clicking anywhere on the scene
-        sceneFrames.addEventListener('click', createCrack);
-        // Initial crack center
-        createCrack({ clientX: window.innerWidth / 2, clientY: window.innerHeight / 2 });
+        sceneFrames.addEventListener('click', advanceCrackStage);
+        // Initial crack
+        advanceCrackStage();
     });
 
-    function createCrack(e) {
-        crackCount++;
+    function advanceCrackStage() {
+        crackStage++;
+        playCrackSound();
 
-        // Audio placeholder for crack sound if desired (optional)
-        // playCrackSound();
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const maxDist = Math.max(cx, cy) * 1.5; // Ensure coverage
 
-        const x = e.clientX;
-        const y = e.clientY;
+        // Stage Logic:
+        // 1-3: Main radial fractures
+        // 4-6: Secondary radial + Inner webbing
+        // 7-8: Dense webbing (shattered glass look)
 
-        // Generate random crack pattern
-        const numLines = Math.floor(Math.random() * 3) + 3; // 3-5 lines per click
+        const fragment = document.createDocumentFragment();
 
-        for (let i = 0; i < numLines; i++) {
-            const angle = Math.random() * 360;
-            const length = Math.random() * 100 + 50;
-            const x2 = x + Math.cos(angle * Math.PI / 180) * length;
-            const y2 = y + Math.sin(angle * Math.PI / 180) * length;
+        if (crackStage <= 3) {
+            // Add 3-4 major radial lines per click
+            const count = 3 + Math.floor(Math.random() * 2);
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                // Varying lengths, some go full way
+                const length = (Math.random() * 0.5 + 0.5) * maxDist;
+                createLine(fragment, cx, cy, cx + Math.cos(angle) * length, cy + Math.sin(angle) * length, 2 + Math.random() * 2);
+            }
+        } else if (crackStage <= 6) {
+            // More radials + Cross webbing
+            const radialCount = 3;
+            for (let i = 0; i < radialCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                createLine(fragment, cx, cy, cx + Math.cos(angle) * maxDist, cy + Math.sin(angle) * maxDist, 1.5);
+            }
 
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', x);
-            line.setAttribute('y1', y);
-            line.setAttribute('x2', x2);
-            line.setAttribute('y2', y2);
-            line.setAttribute('class', 'crack-line');
-            crackContainer.appendChild(line);
+            // Webbing (connecting lines)
+            const webCount = 5;
+            for (let i = 0; i < webCount; i++) {
+                const angle1 = Math.random() * Math.PI * 2;
+                const angle2 = angle1 + (Math.random() * 0.5 + 0.2); // connect to nearby angle
+                const dist = (Math.random() * 0.6 + 0.2) * maxDist; // distance from center
+
+                const x1 = cx + Math.cos(angle1) * dist;
+                const y1 = cy + Math.sin(angle1) * dist;
+                const x2 = cx + Math.cos(angle2) * dist;
+                const y2 = cy + Math.sin(angle2) * dist;
+
+                createLine(fragment, x1, y1, x2, y2, 1 + Math.random());
+            }
+        } else {
+            // Final stages: dense random webbing everywhere matching the "shattered" look
+            // Random polygon-like connections
+            for (let i = 0; i < 15; i++) {
+                // Random point
+                const angle = Math.random() * Math.PI * 2;
+                const dist = Math.random() * maxDist;
+                const x1 = cx + Math.cos(angle) * dist;
+                const y1 = cy + Math.sin(angle) * dist;
+
+                // Connect to a nearby point
+                const x2 = x1 + (Math.random() - 0.5) * 100;
+                const y2 = y1 + (Math.random() - 0.5) * 100;
+
+                createLine(fragment, x1, y1, x2, y2, 0.5 + Math.random());
+            }
         }
 
-        if (crackCount >= maxCracks) {
-            sceneFrames.removeEventListener('click', createCrack);
+        crackContainer.appendChild(fragment);
+
+        if (crackStage >= maxStages) {
+            sceneFrames.removeEventListener('click', advanceCrackStage);
             finishCracking();
         }
+    }
+
+    function createLine(parent, x1, y1, x2, y2, width) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke-width', width);
+        line.setAttribute('class', 'crack-line');
+        parent.appendChild(line);
+    }
+
+    function playCrackSound() {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        // Synthesize a sharp snap/crunch
+        // High pass filtered noise with very short envelope
+        const bufferSize = audioCtx.sampleRate * 0.1; // 100ms
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 8); // Sharp decay
+        }
+
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000; // Remove low rumble, keep the snap
+
+        noise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        noise.start();
     }
 
     function finishCracking() {
@@ -74,12 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add('shake-screen');
         setTimeout(() => {
             document.body.classList.remove('shake-screen');
-            // Transition directly to dialogue (skipping video as per plan/feedback implication)
-            // Or if video was specifically for the shatter, we can keep it? 
-            // User said "blurry images for frames... cracking effect doesn't work".
-            // Let's assume the "video" was the shatter transition. 
-            // We'll proceed to 'dialogue' directly for a clean break, or use 'video' if it's a specific asset they want.
-            // Plan said "Remove/bypass video transition... transition to next scene".
             transitionToScene('dialogue');
         }, 500);
     }
