@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { q: "What is his favorite place he's traveled?", a: "egypt", type: "text" },
         { q: "How many days have you guys been dating?", a: "238", type: "text" },
         { q: "Does he love you more than anything in the world?", a: "yes", type: "choice", options: ["Yes", "No"] },
-        { q: "Is he so down bad for you?", a: "yes", type: "choice", options: ["Yes", "No"] }
+        { q: "Is he down BAD for you?", a: "yes", type: "choice", options: ["Yes", "No"] }
     ];
 
     // Creating vanilla Web Audio API context for beep
